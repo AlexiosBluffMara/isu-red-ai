@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.venv/
+env/
+venv/
+
+# Data (too large for git — stored externally)
+data/pdfs/
+data/extracted/
+data/processed/
+data/lancedb/
+data/chunks.json
+*.lance/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.jsonl
+
+# Secrets
+*.token.json
+credentials/

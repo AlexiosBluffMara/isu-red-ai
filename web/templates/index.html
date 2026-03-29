@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISU ReD AI — Research Discovery Platform</title>
+  <link rel="icon" href="https://designsystem.illinoisstate.edu/images/examples/cds-digital-seal-mobile.png" type="image/png">
+  <link rel="stylesheet" href="/static/css/isu-brand.css">
+  <style>
+    :root {
+      --isu-red: #CE1126;
+      --isu-dark: #1A1A2E;
+      --isu-gray: #4A4A4A;
+      --isu-light: #F5F5F5;
+      --isu-white: #FFFFFF;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--isu-light);
+      color: var(--isu-dark);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--isu-red);
+      color: white;
+      padding: 0;
+    }
+
+    .iguide {
+      background: rgba(0,0,0,0.15);
+      padding: 4px 24px;
+      font-size: 12px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .iguide a { color: rgba(255,255,255,0.8); text-decoration: none; }
+    .iguide a:hover { color: white; }
+
+    .header-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo img { width: 48px; height: 48px; border-radius: 50%; }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text small {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.85;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-item .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .stat-item .stat-label {
+      font-size: 11px;
+      opacity: 0.7;
+      text-transform: uppercase;
+    }
+
+    /* ── Hero Search ── */
+    .hero {
+      background: linear-gradient(135deg, var(--isu-red), #8B0000);
+      color: white;
+      padding: 48px 24px 56px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+
+    .hero p {
+      font-size: 16px;
+      opacity: 0.85;
+      max-width: 600px;
+      margin: 0 auto 24px;
+    }
+
+    .search-box {
+      max-width: 700px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 16px 50px 16px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+      transform: scale(1.01);
+    }
+
+    .search-box button {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      bottom: 6px;
+      padding: 0 20px;
+      background: var(--isu-red);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .search-box button:hover { background: #A00E1F; }
+    .search-box button:disabled { opacity: 0.5; cursor: wait; }
+
+    .mode-toggle {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .mode-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+
+    .mode-toggle label:hover { opacity: 1; }
+
+    .example-queries {
+      margin-top: 16px;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    .example-queries a {
+      color: white;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* ── Content ── */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* ── AI Answer ── */
+    .ai-answer {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 24px;
+      border-left: 4px solid var(--isu-red);
+      display: none;
+    }
+
+    .ai-answer.visible { display: block; animation: fadeIn 0.3s ease; }
+
+    .ai-answer h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      color: var(--isu-red);
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .ai-answer .answer-text {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--isu-gray);
+      white-space: pre-wrap;
+    }
+
+    /* ── Results ── */
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .results-header h2 { font-size: 18px; }
+    .results-count { color: var(--isu-gray); font-size: 14px; }
+
+    .result-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 12px;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .result-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    .result-card .title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--isu-dark);
+      margin-bottom: 4px;
+    }
+
+    .result-card .meta {
+      font-size: 13px;
+      color: var(--isu-gray);
+      margin-bottom: 8px;
+    }
+
+    .result-card .excerpt {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .result-card .score-badge {
+      display: inline-block;
+      background: var(--isu-light);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--isu-gray);
+      font-weight: 600;
+    }
+
+    .result-card a {
+      color: var(--isu-red);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .result-card a:hover { text-decoration: underline; }
+
+    /* ── Loading ── */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      display: none;
+    }
+
+    .loading.visible { display: block; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--isu-light);
+      border-top-color: var(--isu-red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--isu-gray);
+      font-size: 13px;
+      border-top: 1px solid #ddd;
+      margin-top: 40px;
+    }
+
+    .footer a { color: var(--isu-red); text-decoration: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .header-stats { display: none; }
+      .hero h1 { font-size: 28px; }
+      .container { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ISU iGuide Bar -->
+  <header class="header">
+    <div class="iguide">
+      <a href="https://illinoisstate.edu/">Illinois State University</a>
+      <a href="https://my.illinoisstate.edu/">My Illinois State</a>
+      <a href="https://ir.library.illinoisstate.edu/">ISU ReD</a>
+    </div>
+    <div class="header-main">
+      <div class="logo">
+        <img src="https://designsystem.illinoisstate.edu/images/examples/cds-digital-seal-mobile.png"
+             alt="ISU Seal">
+        <div class="logo-text">
+          ISU ReD AI
+          <small>Research Discovery Platform</small>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="stat-item">
+          <div class="stat-value">16,355</div>
+          <div class="stat-label">Papers</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">193,653</div>
+          <div class="stat-label">Vectors</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">12,369</div>
+          <div class="stat-label">Subjects</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">1857–2026</div>
+          <div class="stat-label">Span</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero / Search -->
+  <section class="hero">
+    <h1>Search 169 Years of ISU Scholarship</h1>
+    <p>Ask anything about ISU research — powered by AI semantic search over the entire ReD repository.</p>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="e.g., What has ISU published about machine learning in agriculture?"
+             autofocus autocomplete="off">
+      <button id="searchBtn" onclick="doSearch()">Search</button>
+    </div>
+    <div class="mode-toggle">
+      <label><input type="radio" name="mode" value="search" checked> Vector Search</label>
+      <label><input type="radio" name="mode" value="rag"> AI Answer + Sources</label>
+    </div>
+    <div class="example-queries">
+      Try:
+      <a onclick="setQuery('cybersecurity research at ISU')">cybersecurity</a> ·
+      <a onclick="setQuery('digital twins in manufacturing')">digital twins</a> ·
+      <a onclick="setQuery('education technology and student outcomes')">ed tech</a> ·
+      <a onclick="setQuery('agriculture and climate change')">agriculture</a> ·
+      <a onclick="setQuery('Shakespeare performance and theatre')">theatre</a>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <div class="container">
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div>Searching 193,653 semantic vectors...</div>
+    </div>
+
+    <div class="ai-answer" id="aiAnswer">
+      <h3>AI-Generated Answer</h3>
+      <div class="answer-text" id="answerText"></div>
+    </div>
+
+    <div id="resultsContainer"></div>
+  </div>
+
+  <footer class="footer">
+    Built by <a href="#">Alexios Bluff Mara LLC</a> · March 2026 ·
+    ISU ReD content &copy; respective authors &amp; Illinois State University
+  </footer>
+
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const loading = document.getElementById('loading');
+    const aiAnswer = document.getElementById('aiAnswer');
+    const answerText = document.getElementById('answerText');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearch();
+    });
+
+    function setQuery(q) {
+      searchInput.value = q;
+      doSearch();
+    }
+
+    function getMode() {
+      return document.querySelector('input[name="mode"]:checked').value;
+    }
+
+    async function doSearch() {
+      const q = searchInput.value.trim();
+      if (!q) return;
+
+      searchBtn.disabled = true;
+      loading.classList.add('visible');
+      aiAnswer.classList.remove('visible');
+      resultsContainer.innerHTML = '';
+
+      const mode = getMode();
+
+      try {
+        if (mode === 'rag') {
+          const resp = await fetch(`/api/ask?q=${encodeURIComponent(q)}&k=8`);
+          const data = await resp.json();
+
+          if (data.answer) {
+            answerText.textContent = data.answer;
+            aiAnswer.classList.add('visible');
+          }
+          renderResults(data.sources || [], q);
+        } else {
+          const resp = await fetch(`/api/search?q=${encodeURIComponent(q)}&k=10`);
+          const data = await resp.json();
+          renderResults(data.results || [], q);
+        }
+      } catch (err) {
+        resultsContainer.innerHTML = `<div class="result-card"><div class="title">Error</div><div class="excerpt">${escapeHtml(err.message)}</div></div>`;
+      } finally {
+        searchBtn.disabled = false;
+        loading.classList.remove('visible');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderResults(results, query) {
+      if (!results.length) {
+        resultsContainer.innerHTML = '<div class="result-card"><div class="title">No results found</div><div class="excerpt">Try a different query or broader search terms.</div></div>';
+        return;
+      }
+
+      const header = `
+        <div class="results-header">
+          <h2>Research Results</h2>
+          <span class="results-count">${results.length} papers found</span>
+        </div>`;
+
+      const cards = results.map((r, i) => {
+        const score = r.score ? (r.score * 100).toFixed(1) : '—';
+        const pdfLink = r.pdf_url ? `<a href="${escapeHtml(r.pdf_url)}" target="_blank" rel="noopener">View PDF →</a>` : '';
+        return `
+          <div class="result-card" style="animation: fadeIn 0.3s ease ${i * 0.05}s both">
+            <div class="title">${escapeHtml(r.title || 'Untitled')}</div>
+            <div class="meta">
+              ${escapeHtml(r.authors || 'Unknown')} · ${escapeHtml(String(r.year || 'Unknown'))}
+              <span class="score-badge">${score}% match</span>
+            </div>
+            <div class="excerpt">${escapeHtml(r.text || '').substring(0, 300)}</div>
+            <div style="margin-top: 8px">${pdfLink}</div>
+          </div>`;
+      }).join('');
+
+      resultsContainer.innerHTML = header + cards;
+    }
+  </script>
+</body>
+</html>
