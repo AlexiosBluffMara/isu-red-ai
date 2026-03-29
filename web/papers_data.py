@@ -336,3 +336,28 @@ def compute_overview_stats() -> dict:
         "year_max": max(valid_years) if valid_years else None,
         "top_authors_count": len(compute_top_authors()),
     }
+
+
+def compute_collection_stats(db_dir: str | None = None) -> list[dict]:
+    """Get collection-level stats from LanceDB vectors."""
+    try:
+        import lancedb
+        if not db_dir:
+            db_dir = os.environ.get(
+                "LANCEDB_DIR",
+                str(Path(__file__).parent.parent / "data" / "lancedb"),
+            )
+        db = lancedb.connect(db_dir)
+        table = db.open_table("isu_red_papers")
+        rows = table.search().select(["collection"]).limit(300000).to_list()
+
+        from collections import Counter as _Counter
+        counts = _Counter(r.get("collection", "") for r in rows)
+        result = []
+        for coll, count in counts.most_common():
+            name = coll.strip() if coll else "Uncategorized"
+            if name:
+                result.append({"collection": name, "chunks": count})
+        return result
+    except Exception:
+        return []

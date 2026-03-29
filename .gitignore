@@ -15,10 +15,10 @@ env/
 venv/
 
 # Data (too large for git — stored externally)
-data/pdfs/
-data/extracted/
-data/processed/
-data/lancedb/
+data/pdfs
+data/extracted
+data/processed
+data/lancedb
 data/chunks.json
 *.lance/
 

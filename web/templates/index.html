@@ -372,6 +372,41 @@
     .empty-state .emoji { font-size: 48px; margin-bottom: 16px; }
     .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--isu-dark); }
 
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      padding: 14px 20px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 500; color: white;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease, fadeOut 0.3s ease 4.7s forwards;
+      max-width: 400px;
+    }
+    .toast.error { background: #D32F2F; }
+    .toast.success { background: #388E3C; }
+    .toast.warning { background: #F57C00; }
+
+    .error-banner {
+      background: #FFF3F3; border: 1px solid #FFCDD2; border-radius: var(--radius-sm);
+      padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
+    }
+    .error-banner .error-icon { font-size: 20px; }
+    .error-banner .error-text { flex: 1; font-size: 14px; color: #C62828; }
+    .error-banner .retry-btn {
+      padding: 6px 14px; background: #C62828; color: white; border: none;
+      border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .error-banner .retry-btn:hover { background: #B71C1C; }
+
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm); height: 20px; margin-bottom: 8px;
+    }
+    .skeleton.w-full { width: 100%; }
+    .skeleton.w-3-4 { width: 75%; }
+    .skeleton.w-1-2 { width: 50%; }
+    .skeleton.h-stat { height: 60px; }
+    .skeleton.h-chart { height: 250px; }
+
     .footer {
       text-align: center; padding: 24px;
       color: var(--isu-gray); font-size: 13px;
@@ -381,6 +416,9 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+    @keyframes shimmer { to { background-position: -200% 0; } }
     .fade-in { animation: fadeIn 0.3s ease; }
 
     @media (max-width: 768px) {
@@ -547,6 +585,30 @@
 let chartsLoaded = false, browseLoaded = false, subjectsLoaded = false;
 let currentBrowsePage = 1, cachedSubjects = null;
 
+function showToast(msg, type) {
+  type = type || 'error';
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 5000);
+}
+
+async function apiFetch(url) {
+  var resp = await fetch(url);
+  if (resp.status === 429) {
+    showToast('Rate limit reached — please wait a moment and try again.', 'warning');
+    throw new Error('Rate limited');
+  }
+  if (!resp.ok) {
+    var body = {};
+    try { body = await resp.json(); } catch(e) {}
+    var msg = body.error || ('Server error: ' + resp.status);
+    throw new Error(msg);
+  }
+  return resp.json();
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
@@ -575,20 +637,18 @@ async function doSearch(mode) {
   sr.innerHTML = '';
   try {
     if (mode === 'rag') {
-      var resp = await fetch('/api/ask?q='+encodeURIComponent(q)+'&k=8');
-      var data = await resp.json();
+      var data = await apiFetch('/api/ask?q='+encodeURIComponent(q)+'&k=8');
       if (data.answer) {
         document.getElementById('answerText').textContent = data.answer;
         aiAnswer.classList.add('visible');
       }
       renderSearchResults(data.sources || [], q);
     } else {
-      var resp = await fetch('/api/search?q='+encodeURIComponent(q)+'&k=15');
-      var data = await resp.json();
+      var data = await apiFetch('/api/search?q='+encodeURIComponent(q)+'&k=15');
       renderSearchResults(data.results || [], q);
     }
   } catch (err) {
-    sr.innerHTML = '<div class="result-card"><div class="title">Error</div><div class="excerpt">'+esc(err.message)+'</div></div>';
+    sr.innerHTML = '<div class="error-banner"><span class="error-icon">&#x26A0;</span><span class="error-text">'+esc(err.message)+'</span><button class="retry-btn" onclick="doSearch(\''+mode+'\')">Retry</button></div>';
   } finally {
     btn.disabled = false;
     loading.classList.remove('visible');
@@ -627,11 +687,16 @@ function renderSearchResults(results) {
 
 async function loadDashboard() {
   chartsLoaded = true;
-  var responses = await Promise.all([
-    fetch('/api/stats'), fetch('/api/years'), fetch('/api/subjects?limit=15'),
-    fetch('/api/categories'), fetch('/api/wordcloud'), fetch('/api/authors?limit=20')
-  ]);
-  var data = await Promise.all(responses.map(function(r) { return r.json(); }));
+  try {
+    var data = await Promise.all([
+      apiFetch('/api/stats'), apiFetch('/api/years'), apiFetch('/api/subjects?limit=15'),
+      apiFetch('/api/categories'), apiFetch('/api/wordcloud'), apiFetch('/api/authors?limit=20')
+    ]);
+  } catch (err) {
+    showToast('Failed to load dashboard: ' + err.message);
+    chartsLoaded = false;
+    return;
+  }
   var stats = data[0], years = data[1], subjects = data[2], categories = data[3], wordcloud = data[4], authors = data[5];
 
   document.getElementById('statPapers').textContent = (stats.total_papers||0).toLocaleString();
@@ -698,10 +763,14 @@ async function loadDashboard() {
 
 async function loadBrowse() {
   browseLoaded = true;
-  if (!cachedSubjects) {
-    var resp = await fetch('/api/subjects?limit=100');
-    var data = await resp.json();
-    cachedSubjects = data.subjects||[];
+  try {
+    if (!cachedSubjects) {
+      var data = await apiFetch('/api/subjects?limit=100');
+      cachedSubjects = data.subjects||[];
+    }
+  } catch (err) {
+    showToast('Failed to load subjects: ' + err.message);
+    cachedSubjects = [];
   }
   var sel = document.getElementById('browseSubject');
   cachedSubjects.forEach(function(s) {
@@ -732,8 +801,7 @@ async function browsePapers(page) {
   if (ys) params.set('year_start', ys);
   if (ye) params.set('year_end', ye);
   try {
-    var resp = await fetch('/api/papers?'+params);
-    var data = await resp.json();
+    var data = await apiFetch('/api/papers?'+params);
     if (!data.papers || !data.papers.length) {
       results.innerHTML = '<div class="empty-state"><div class="emoji">&#x1F4ED;</div><h3>No papers found</h3><p>Try adjusting your filters.</p></div>';
       loading.classList.remove('visible');
@@ -760,7 +828,7 @@ async function browsePapers(page) {
     results.innerHTML = html;
     renderPagination(data.page, data.total_pages, pagination);
   } catch (err) {
-    results.innerHTML = '<div class="result-card"><div class="title">Error</div><div class="excerpt">'+esc(err.message)+'</div></div>';
+    results.innerHTML = '<div class="error-banner"><span class="error-icon">&#x26A0;</span><span class="error-text">'+esc(err.message)+'</span><button class="retry-btn" onclick="browsePapers('+page+')">Retry</button></div>';
   } finally {
     loading.classList.remove('visible');
   }
@@ -793,8 +861,13 @@ function browseBySubject(subj) {
 
 async function loadSubjects() {
   subjectsLoaded = true;
-  var resp = await fetch('/api/categories');
-  var data = await resp.json();
+  try {
+    var data = await apiFetch('/api/categories');
+  } catch (err) {
+    showToast('Failed to load subjects: ' + err.message);
+    subjectsLoaded = false;
+    return;
+  }
   var grid = document.getElementById('categoriesGrid');
   var icons = {'Education & Teaching':'&#x1F4D6;','Science & Mathematics':'&#x1F52C;','Arts & Performance':'&#x1F3AD;','Social Sciences':'&#x1F30D;','Business & Economics':'&#x1F4C8;','Health & Medicine':'&#x1F3E5;','Law & Criminal Justice':'&#x2696;','Engineering & Technology':'&#x1F4BB;','Humanities & Literature':'&#x1F4DA;','Library & Information Science':'&#x1F4D1;','Other':'&#x1F4CB;'};
   var cc = ['#CE1126','#F6A917','#56758F','#2E4057','#048A81','#8B0000','#D4A574','#6B5B95','#88B04B','#955251','#92A8D1'];

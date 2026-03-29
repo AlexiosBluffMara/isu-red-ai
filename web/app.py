@@ -25,6 +25,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from search.engine import rag_answer, search, search_similar
 from web.middleware import RateLimitMiddleware, cache
 from web.papers_data import (
+    compute_collection_stats,
     compute_decade_counts,
     compute_overview_stats,
     compute_subject_categories,
@@ -50,11 +51,38 @@ log = logging.getLogger("isu-red-ai.web")
 
 app = FastAPI(
     title="ISU ReD AI",
-    version="2.2.0",
+    version="2.3.0",
     description="AI-powered research discovery for Illinois State University's ReD repository.",
     docs_url="/api/docs" if os.environ.get("ENABLE_DOCS") else None,
     redoc_url=None,
 )
+
+
+# ── Exception Handlers ───────────────────────────────────────────────
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    return JSONResponse(
+        {"error": "Not found", "path": str(request.url.path)},
+        status_code=404,
+    )
+
+
+@app.exception_handler(422)
+async def validation_handler(request: Request, exc):
+    return JSONResponse(
+        {"error": "Invalid request parameters", "detail": str(exc)},
+        status_code=422,
+    )
+
+
+@app.exception_handler(500)
+async def server_error_handler(request: Request, exc):
+    log.error("Unhandled error on %s: %s", request.url.path, exc)
+    return JSONResponse(
+        {"error": "Internal server error"},
+        status_code=500,
+    )
 
 # ── Middleware ────────────────────────────────────────────────────────
 
@@ -306,6 +334,18 @@ async def api_authors(limit: int = 50):
     def compute():
         return {"authors": compute_top_authors(min(limit, 200))}
     return _cached_json("/api/authors", f"limit={limit}", compute)
+
+
+@app.get("/api/collections", tags=["Data"])
+async def api_collections(limit: int = 50):
+    """Collection-level stats from the vector database."""
+    def compute():
+        collections = compute_collection_stats()
+        return {
+            "collections": collections[:min(limit, 500)],
+            "total_unique": len(collections),
+        }
+    return _cached_json("/api/collections", f"limit={limit}", compute, ttl=900)
 
 
 @app.get("/api/papers", tags=["Browse"])

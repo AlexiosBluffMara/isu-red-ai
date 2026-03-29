@@ -214,3 +214,42 @@ def test_response_cache_invalidate():
     assert rc.get("/b", "") is not None
     rc.invalidate()
     assert rc.get("/b", "") is None
+
+
+# ── v2.3.0 tests ─────────────────────────────────────────────────────
+
+@pytest.mark.anyio
+async def test_collections_endpoint(client):
+    """Collections endpoint should return collection data."""
+    resp = await client.get("/api/collections?limit=5")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "collections" in data
+    assert "total_unique" in data
+
+
+@pytest.mark.anyio
+async def test_404_returns_json(client):
+    """Non-existent routes should return structured JSON 404."""
+    resp = await client.get("/api/nonexistent")
+    assert resp.status_code == 404
+    data = resp.json()
+    assert "error" in data
+    assert data["error"] == "Not found"
+
+
+@pytest.mark.anyio
+async def test_stats_has_with_subjects(client):
+    """Stats should include with_subjects field."""
+    resp = await client.get("/api/stats")
+    data = resp.json()
+    assert "with_subjects" in data
+    assert "unique_authors" in data
+    assert data["with_subjects"] >= 0
+
+
+def test_collection_stats_no_lance():
+    """compute_collection_stats returns empty list if LanceDB unavailable."""
+    from web.papers_data import compute_collection_stats
+    result = compute_collection_stats(db_dir="/nonexistent/path")
+    assert result == []
