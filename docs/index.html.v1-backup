@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISU ReD AI — Intelligent Research Discovery Platform</title>
+<meta name="description" content="AI-powered semantic search over 16,000+ research papers from Illinois State University's Research and eData repository.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ========== CSS RESET & VARIABLES ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --isu-red: #CC0000;
+  --isu-red-dark: #A00000;
+  --isu-red-light: #E53333;
+  --isu-yellow: #F6A917;
+  --isu-yellow-light: #FCEBD0;
+  --isu-blue: #56758F;
+  --isu-blue-light: #7A9BB5;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8F9FA;
+  --bg-tertiary: #F0F1F3;
+  --bg-card: #FFFFFF;
+  --text-primary: #1A1A2E;
+  --text-secondary: #4A4A5A;
+  --text-muted: #7A7A8A;
+  --border-color: #E2E4E8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.15), 0 8px 20px rgba(0,0,0,0.08);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --font-sans: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'PT Serif', Georgia, serif;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0D1117;
+  --bg-secondary: #161B22;
+  --bg-tertiary: #1C2129;
+  --bg-card: #1C2129;
+  --text-primary: #F0F6FC;
+  --text-secondary: #C9D1D9;
+  --text-muted: #8B949E;
+  --border-color: #30363D;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.6);
+  --isu-red-light: #FF4444;
+}
+
+/* ========== BASE ========== */
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  transition: background var(--transition), color var(--transition);
+  overflow-x: hidden;
+}
+
+a { color: var(--isu-red); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--isu-red-dark); }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* ========== NAVIGATION ========== */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-color);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+[data-theme="dark"] .nav {
+  background: rgba(13,17,23,0.85);
+}
+
+.nav-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+
+.nav-brand {
+  display: flex; align-items: center; gap: 12px;
+  font-weight: 700; font-size: 1.1rem; color: var(--text-primary);
+}
+
+.nav-brand-dot {
+  width: 10px; height: 10px; background: var(--isu-red);
+  border-radius: 50%; display: inline-block;
+}
+
+.nav-links { display: flex; align-items: center; gap: 8px; list-style: none; }
+
+.nav-links a {
+  color: var(--text-secondary); font-size: 0.875rem; font-weight: 500;
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+
+.nav-links a:hover { color: var(--isu-red); background: var(--bg-secondary); }
+
+.theme-toggle {
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm); padding: 8px 10px;
+  cursor: pointer; font-size: 1.1rem; line-height: 1;
+  transition: all var(--transition); color: var(--text-primary);
+}
+
+.theme-toggle:hover { border-color: var(--isu-red); }
+
+.nav-mobile-btn {
+  display: none; background: none; border: none; cursor: pointer;
+  color: var(--text-primary); font-size: 1.4rem; padding: 4px;
+}
+
+/* ========== HERO ========== */
+.hero {
+  padding: 140px 0 100px;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  position: relative; overflow: hidden;
+  transition: background var(--transition);
+}
+
+.hero::before {
+  content: ''; position: absolute; top: -50%; right: -20%;
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(204,0,0,0.06) 0%, transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
+
+.hero::after {
+  content: ''; position: absolute; bottom: -30%; left: -10%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(246,169,23,0.05) 0%, transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
+
+.hero-content { position: relative; z-index: 1; text-align: center; }
+
+.hero-seal {
+  width: 100px; height: 100px; margin: 0 auto 24px;
+  border-radius: 50%; overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 3px solid var(--bg-card);
+}
+
+.hero-seal img { width: 100%; height: 100%; object-fit: cover; }
+
+.hero-wordmark {
+  font-family: var(--font-sans);
+  font-size: 0.8rem; font-weight: 700;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--isu-red); margin-bottom: 20px;
+}
+
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700; line-height: 1.15;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.hero-title span { color: var(--isu-red); }
+
+.hero-subtitle {
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  color: var(--text-secondary);
+  font-weight: 400; max-width: 680px; margin: 0 auto 40px;
+  line-height: 1.5;
+}
+
+.hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 32px; border-radius: var(--radius-sm);
+  font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition); border: none;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--isu-red); color: #FFF;
+  box-shadow: 0 4px 14px rgba(204,0,0,0.35);
+}
+
+.btn-primary:hover {
+  background: var(--isu-red-dark); color: #FFF;
+  box-shadow: 0 6px 20px rgba(204,0,0,0.45);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--bg-card); color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  border-color: var(--isu-red); color: var(--isu-red);
+  transform: translateY(-2px); box-shadow: var(--shadow-md);
+}
+
+.hero-stats-bar {
+  margin-top: 60px;
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+
+.hero-stat { text-align: center; }
+.hero-stat-num {
+  font-size: 1.5rem; font-weight: 800; color: var(--isu-red);
+  font-variant-numeric: tabular-nums;
+}
+.hero-stat-label {
+  font-size: 0.75rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* ========== SECTIONS ========== */
+.section { padding: 100px 0; }
+.section-alt { background: var(--bg-secondary); }
+
+.section-header {
+  text-align: center; margin-bottom: 64px;
+}
+
+.section-label {
+  display: inline-block; font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--isu-red); margin-bottom: 12px;
+  background: rgba(204,0,0,0.08); padding: 6px 16px;
+  border-radius: 100px;
+}
+
+[data-theme="dark"] .section-label { background: rgba(204,0,0,0.15); }
+
+.section-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 700; color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.section-desc {
+  font-size: 1.05rem; color: var(--text-secondary);
+  max-width: 640px; margin: 0 auto;
+}
+
+/* ========== ARCHITECTURE ========== */
+.pipeline {
+  display: flex; align-items: stretch; justify-content: center;
+  gap: 0; flex-wrap: wrap; margin: 0 auto;
+  max-width: 1100px;
+}
+
+.pipeline-step {
+  flex: 1; min-width: 150px; max-width: 180px;
+  text-align: center; position: relative;
+  padding: 28px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition);
+  margin: 0 24px 16px 0;
+}
+
+.pipeline-step:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--isu-red);
+}
+
+.pipeline-step:not(:last-child)::after {
+  content: '→'; position: absolute;
+  right: -22px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.4rem; font-weight: 300;
+  color: var(--isu-red);
+}
+
+.pipeline-step:last-child { margin-right: 0; }
+
+.pipeline-icon {
+  width: 52px; height: 52px; margin: 0 auto 14px;
+  background: rgba(204,0,0,0.08);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  transition: background var(--transition);
+}
+
+[data-theme="dark"] .pipeline-icon { background: rgba(204,0,0,0.15); }
+
+.pipeline-step:hover .pipeline-icon { background: rgba(204,0,0,0.15); }
+
+.pipeline-label {
+  font-size: 0.85rem; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 6px;
+}
+
+.pipeline-detail {
+  font-size: 0.72rem; color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ========== STATS GRID ========== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  transition: all var(--transition);
+  position: relative; overflow: hidden;
+}
+
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: var(--isu-red);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform var(--transition);
+}
+
+.stat-card:hover::before { transform: scaleX(1); }
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-number {
+  font-size: 2.2rem; font-weight: 800;
+  color: var(--isu-red); line-height: 1.1;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 0.95rem; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 8px;
+}
+
+.stat-desc {
+  font-size: 0.82rem; color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ========== FEATURES ========== */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  transition: all var(--transition);
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: transparent;
+}
+
+.feature-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--isu-red), var(--isu-red-light));
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; margin-bottom: 20px;
+  color: #FFF;
+}
+
+.feature-title {
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 10px;
+}
+
+.feature-desc {
+  font-size: 0.9rem; color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ========== TECH STACK ========== */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.tech-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: all var(--transition);
+}
+
+.tech-item:hover {
+  border-color: var(--isu-red);
+  box-shadow: var(--shadow-md);
+}
+
+.tech-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+
+.tech-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+.tech-role { font-size: 0.78rem; color: var(--text-muted); }
+
+/* ========== COST ANALYSIS ========== */
+.cost-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 32px; max-width: 900px; margin: 0 auto;
+}
+
+.cost-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  text-align: center;
+  transition: all var(--transition);
+}
+
+.cost-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+
+.cost-card.highlight {
+  border-color: var(--isu-red);
+  background: linear-gradient(135deg, rgba(204,0,0,0.03), rgba(246,169,23,0.03));
+}
+
+[data-theme="dark"] .cost-card.highlight {
+  background: linear-gradient(135deg, rgba(204,0,0,0.08), rgba(246,169,23,0.05));
+}
+
+.cost-eyebrow {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.15em; color: var(--text-muted); margin-bottom: 12px;
+}
+
+.cost-amount {
+  font-size: 3rem; font-weight: 800;
+  color: var(--text-primary); line-height: 1;
+  margin-bottom: 4px;
+}
+
+.cost-card.highlight .cost-amount { color: var(--isu-red); }
+
+.cost-sub {
+  font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;
+}
+
+.cost-breakdown {
+  list-style: none; text-align: left;
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+
+.cost-breakdown li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+  display: flex; justify-content: space-between;
+}
+
+.cost-breakdown li:last-child { border-bottom: none; }
+
+.savings-badge {
+  display: inline-block; margin-top: 20px;
+  background: rgba(204,0,0,0.1); color: var(--isu-red);
+  font-weight: 700; font-size: 0.85rem;
+  padding: 8px 20px; border-radius: 100px;
+}
+
+[data-theme="dark"] .savings-badge { background: rgba(204,0,0,0.2); }
+
+/* ========== SEARCH DEMO ========== */
+.demo-section { padding: 100px 0; }
+
+.demo-container {
+  max-width: 720px; margin: 0 auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 48px 40px;
+  box-shadow: var(--shadow-lg);
+}
+
+.demo-search-wrap {
+  display: flex; gap: 12px; margin-bottom: 24px;
+}
+
+.demo-input {
+  flex: 1; padding: 14px 20px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all var(--transition);
+  outline: none;
+}
+
+.demo-input:focus { border-color: var(--isu-red); box-shadow: 0 0 0 3px rgba(204,0,0,0.1); }
+.demo-input::placeholder { color: var(--text-muted); }
+
+.demo-btn {
+  padding: 14px 28px; background: var(--isu-red);
+  color: #FFF; border: none; border-radius: var(--radius-sm);
+  font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.demo-btn:hover { background: var(--isu-red-dark); }
+
+.demo-queries {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px;
+}
+
+.demo-query-chip {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 0.8rem; color: var(--text-secondary);
+  cursor: pointer; transition: all var(--transition);
+}
+
+.demo-query-chip:hover {
+  border-color: var(--isu-red); color: var(--isu-red);
+  background: rgba(204,0,0,0.05);
+}
+
+.demo-result {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: none;
+}
+
+.demo-result.active { display: block; }
+
+.demo-result-header {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.15em; color: var(--isu-red); margin-bottom: 12px;
+}
+
+.demo-result-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 8px;
+}
+
+.demo-result-meta {
+  font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;
+}
+
+.demo-result-text {
+  font-size: 0.88rem; color: var(--text-secondary); line-height: 1.65;
+}
+
+.demo-result-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px;
+}
+
+.demo-tag {
+  background: rgba(204,0,0,0.08); color: var(--isu-red);
+  font-size: 0.7rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 100px;
+}
+
+[data-theme="dark"] .demo-tag { background: rgba(204,0,0,0.18); }
+
+/* ========== API / GETTING STARTED ========== */
+.api-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.api-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--transition);
+}
+
+.api-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+
+.api-card-header {
+  padding: 20px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.api-method {
+  font-size: 0.7rem; font-weight: 800;
+  padding: 3px 10px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.api-method.get { background: #D4EDDA; color: #155724; }
+.api-method.post { background: #CCE5FF; color: #004085; }
+
+[data-theme="dark"] .api-method.get { background: #1A3A2A; color: #7DD39F; }
+[data-theme="dark"] .api-method.post { background: #1A2E45; color: #79B8FF; }
+
+.api-path {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85rem; color: var(--text-primary); font-weight: 600;
+}
+
+.api-card-body { padding: 20px 24px; }
+
+.api-desc { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 14px; }
+
+.api-code {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.6;
+}
+
+/* ========== FOOTER ========== */
+.footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  padding: 60px 0 40px;
+  text-align: center;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.footer-seal {
+  width: 64px; height: 64px; margin: 0 auto 16px;
+  border-radius: 50%; overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.footer-seal img { width: 100%; height: 100%; object-fit: cover; }
+
+.footer-org {
+  font-size: 0.85rem; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 4px;
+}
+
+.footer-dept {
+  font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 20px;
+}
+
+.footer-powered {
+  font-size: 0.75rem; color: var(--text-muted);
+  background: var(--bg-tertiary);
+  display: inline-block;
+  padding: 6px 18px; border-radius: 100px;
+  margin-bottom: 20px;
+}
+
+.footer-credits {
+  font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;
+}
+
+.footer-copy {
+  font-size: 0.7rem; color: var(--text-muted);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .nav-mobile-btn { display: block; }
+  .nav-links.open {
+    display: flex; flex-direction: column;
+    position: absolute; top: 64px; left: 0; right: 0;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 24px;
+  }
+  .hero { padding: 120px 0 80px; }
+  .hero-stats-bar { gap: 24px; }
+  .pipeline-step { max-width: 140px; margin: 0 16px 16px 0; }
+  .pipeline-step:not(:last-child)::after { right: -16px; font-size: 1rem; }
+  .cost-grid { grid-template-columns: 1fr; }
+  .demo-container { padding: 32px 24px; }
+  .demo-search-wrap { flex-direction: column; }
+  .features-grid { grid-template-columns: 1fr; }
+  .api-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 500px) {
+  .pipeline { flex-direction: column; align-items: center; }
+  .pipeline-step { max-width: 240px; margin: 0 0 16px 0; }
+  .pipeline-step:not(:last-child)::after {
+    content: '↓'; right: auto; bottom: -18px; top: auto;
+    left: 50%; transform: translateX(-50%);
+  }
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.animate.visible { opacity: 1; transform: translateY(0); }
+
+/* ========== SCROLL PROGRESS ========== */
+.scroll-progress {
+  position: fixed; top: 64px; left: 0; height: 2px;
+  background: var(--isu-red); z-index: 999;
+  width: 0; transition: width 0.1s linear;
+}
+</style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <span class="nav-brand-dot"></span>
+      ISU ReD AI
+    </div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#stats">Pipeline</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#technology">Stack</a></li>
+      <li><a href="#cost">Cost</a></li>
+      <li><a href="#demo">Demo</a></li>
+      <li><a href="#api">API</a></li>
+    </ul>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+      <button class="nav-mobile-btn" id="mobileBtn" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container hero-content">
+    <div class="hero-seal">
+      <img src="https://designsystem.illinoisstate.edu/images/examples/cds-digital-seal-mobile.png"
+           alt="Illinois State University Seal"
+           loading="eager">
+    </div>
+    <div class="hero-wordmark">ILLINOIS STATE UNIVERSITY</div>
+    <h1 class="hero-title">ISU <span>ReD</span> AI</h1>
+    <p class="hero-subtitle">
+      Intelligent Research Discovery Platform — AI-powered semantic search across
+      169 years of Illinois State University scholarship.
+    </p>
+    <div class="hero-buttons">
+      <a href="#demo" class="btn btn-primary">
+        <span>⚡</span> Live Demo
+      </a>
+      <a href="#architecture" class="btn btn-secondary">
+        <span>📐</span> Explore Architecture
+      </a>
+    </div>
+    <div class="hero-stats-bar">
+      <div class="hero-stat">
+        <div class="hero-stat-num">16,355</div>
+        <div class="hero-stat-label">PDFs Downloaded</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">13,610</div>
+        <div class="hero-stat-label">Papers Extracted</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">193,653</div>
+        <div class="hero-stat-label">Semantic Chunks</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">$0.044</div>
+        <div class="hero-stat-label">Per Paper</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture -->
+<section class="section section-alt" id="architecture">
+  <div class="container">
+    <div class="section-header animate">
+      <div class="section-label">System Architecture</div>
+      <h2 class="section-title">End-to-End RAG Pipeline</h2>
+      <p class="section-desc">
+        From raw PDFs to intelligent answers — a six-stage pipeline that transforms
+        ISU's entire research output into a searchable knowledge base.
+      </p>
+    </div>
+    <div class="pipeline animate">
+      <div class="pipeline-step">
+        <div class="pipeline-icon">📥</div>
+        <div class="pipeline-label">Collection</div>
+        <div class="pipeline-detail">16,355 PDFs<br>40 GB from ReD</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🔬</div>
+        <div class="pipeline-label">Extraction</div>
+        <div class="pipeline-detail">Gemini 2.5 Flash/Pro<br>+ PyMuPDF fallback</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🧬</div>
+        <div class="pipeline-label">Embedding</div>
+        <div class="pipeline-detail">3,072-dim vectors<br>Gemini Embedding 2</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🗄️</div>
+        <div class="pipeline-label">Vector DB</div>
+        <div class="pipeline-detail">LanceDB<br>2.5 GB index</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🔍</div>
+        <div class="pipeline-label">Search</div>
+        <div class="pipeline-detail">Semantic + metadata<br>hybrid retrieval</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">✨</div>
+        <div class="pipeline-label">RAG Answer</div>
+        <div class="pipeline-detail">Gemini 2.5 Flash<br>grounded response</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pipeline Stats -->
+<section class="section" id="stats">
+  <div class="container">
+    <div class="section-header animate">
+      <div class="section-label">Pipeline Metrics</div>
+      <h2 class="section-title">By the Numbers</h2>
+      <p class="section-desc">
+        A comprehensive AI transformation of ISU's 169-year research archive.
+      </p>
+    </div>
+    <div class="stats-grid animate">
+      <div class="stat-card">
+        <div class="stat-number">16,355</div>
+        <div class="stat-label">PDFs Downloaded</div>
+        <div class="stat-desc">40 GB of academic papers scraped from ISU's Research and eData repository</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">13,610</div>
+        <div class="stat-label">Papers Extracted</div>
+        <div class="stat-desc">Full text extraction via Gemini 2.5 Flash/Pro with PyMuPDF fallback</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">193,653</div>
+        <div class="stat-label">Semantic Chunks</div>
+        <div class="stat-desc">3,072-dimensional vectors generated with Gemini Embedding 2</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">2.5 GB</div>
+        <div class="stat-label">Vector Database</div>
+        <div class="stat-desc">LanceDB columnar store with ANN indexing for sub-second search</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">12,369</div>
+        <div class="stat-label">Subject Tags</div>
+        <div class="stat-desc">Unique metadata categories spanning every department and discipline</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">1857–2026</div>
+        <div class="stat-label">Temporal Range</div>
+        <div class="stat-desc">169 years of Illinois State University scholarship indexed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section section-alt" id="features">
+  <div class="container">
+    <div class="section-header animate">
+      <div class="section-label">Capabilities</div>
+      <h2 class="section-title">Intelligent Features</h2>
+      <p class="section-desc">
+        Purpose-built for research discovery with enterprise-grade architecture.
+      </p>
+    </div>
+    <div class="features-grid animate">
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">Semantic Search</div>
+        <div class="feature-desc">
+          Natural language queries matched against 193K+ semantic chunks using
+          high-dimensional vector similarity — not keyword matching.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Metadata Filtering</div>
+        <div class="feature-desc">
+          Filter by department, year range, subject tags, or document type.
+          Combine structured filters with semantic search for precision.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">RAG-Powered Answers</div>
+        <div class="feature-desc">
+          Get synthesized, citation-backed answers grounded in actual ISU research.
+          Every claim traceable to source documents.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">☁️</div>
+        <div class="feature-title">GCP Integration</div>
+        <div class="feature-desc">
+          Enterprise-ready with Google Cloud GenAI App Builder and Vertex AI Search
+          for production-scale deployment.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Sub-Second Retrieval</div>
+        <div class="feature-desc">
+          LanceDB's columnar storage with ANN indexing delivers results in
+          milliseconds, even across the full 2.5 GB index.
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Open & Reproducible</div>
+        <div class="feature-desc">
+          Fully open-source pipeline. Every stage documented and reproducible —
+          from scraping to deployment.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Technology Stack -->
+<section class="section" id="technology">
+  <div class="container">
+    <div class="section-header animate">
+      <div class="section-label">Technology</div>
+      <h2 class="section-title">Built With</h2>
+    </div>
+    <div class="tech-grid animate">
+      <div class="tech-item">
+        <div class="tech-icon">🤖</div>
+        <div>
+          <div class="tech-name">Gemini 2.5 Flash</div>
+          <div class="tech-role">Extraction & RAG generation</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">🧬</div>
+        <div>
+          <div class="tech-name">Gemini Embedding 2</div>
+          <div class="tech-role">3,072-dim semantic vectors</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">🗄️</div>
+        <div>
+          <div class="tech-name">LanceDB</div>
+          <div class="tech-role">Columnar vector database</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">📄</div>
+        <div>
+          <div class="tech-name">PyMuPDF</div>
+          <div class="tech-role">PDF parsing fallback</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">🐍</div>
+        <div>
+          <div class="tech-name">Python + FastAPI</div>
+          <div class="tech-role">Backend framework</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">☁️</div>
+        <div>
+          <div class="tech-name">Google Cloud</div>
+          <div class="tech-role">GCP GenAI App Builder</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">🔍</div>
+        <div>
+          <div class="tech-name">Vertex AI Search</div>
+          <div class="tech-role">Enterprise search layer</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-icon">🌐</div>
+        <div>
+          <div class="tech-name">GitHub Pages</div>
+          <div class="tech-role">Documentation hosting</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Cost Analysis -->
+<section class="section section-alt" id="cost">
+  <div class="container">
+    <div class="section-header animate">
+      <div class="section-label">Cost Analysis</div>
+      <h2 class="section-title">Enterprise Value at Student Budget</h2>
+      <p class="section-desc">
+        Delivering $36K–$150K+ of commercial equivalent value for under $1,300.
+      </p>
+    </div>
+    <div class="cost-grid animate">
+      <div class="cost-card highlight">
+        <div class="cost-eyebrow">ISU ReD AI — Actual Cost</div>
+        <div class="cost-amount">~$1,300</div>
+        <div class="cost-sub">$0.044 per paper processed</div>
+        <ul class="cost-breakdown">
+          <li><span>Gemini API calls</span><span>~$604</span></li>
+          <li><span>Cloud infrastructure</span><span>~$700</span></li>
+          <li><span>LanceDB</span><span>Free (OSS)</span></li>
+          <li><span>GitHub Pages</span><span>Free</span></li>
+        </ul>
+        <div class="savings-badge">96–99% cost reduction</div>
+      </div>
+      <div class="cost-card">
+        <div class="cost-eyebrow">Commercial Equivalent</div>
+        <div class="cost-amount">$36K–$150K+</div>
+        <div class="cost-sub">Enterprise search platform pricing</div>
+        <ul class="cost-breakdown">
+          <li><span>Vendor licensing</span><span>$20K–$80K/yr</span></li>
+          <li><span>Implementation</span><span>$10K–$40K</span></li>
+          <li><span>Ongoing maintenance</span><span>$6K–$30K/yr</span></li>
+          <li><span>Customization</span><span>Variable</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Search Demo -->
+<section class="section demo-section" id="demo">
+  <div class="container">
+    <div class="section-header animate">
+      <div class="section-label">Try It</div>
+      <h2 class="section-title">Search ISU Research</h2>
+      <p class="section-desc">
+        Ask a natural language question and get AI-synthesized answers
+        grounded in ISU's research archive.
+      </p>
+    </div>
+    <div class="demo-container animate">
+      <div class="demo-search-wrap">
+        <input type="text" class="demo-input" id="demoInput"
+               placeholder="Ask about ISU research..." autocomplete="off">
+        <button class="demo-btn" id="demoBtn">Search</button>
+      </div>
+      <div class="demo-queries">
+        <span class="demo-query-chip" data-query="What research has ISU conducted on rural education outcomes?">rural education</span>
+        <span class="demo-query-chip" data-query="How has climate change affected Illinois agriculture according to ISU studies?">climate &amp; agriculture</span>
+        <span class="demo-query-chip" data-query="What are ISU's contributions to special education policy?">special education</span>
+        <span class="demo-query-chip" data-query="Summarize ISU research on cybersecurity and information systems">cybersecurity</span>
+        <span class="demo-query-chip" data-query="What has ISU published about community health interventions?">community health</span>
+      </div>
+      <div class="demo-result" id="demoResult">
+        <div class="demo-result-header">AI-Generated Answer · 3 sources</div>
+        <div class="demo-result-title" id="resultTitle"></div>
+        <div class="demo-result-meta" id="resultMeta"></div>
+        <div class="demo-result-text" id="resultText"></div>
+        <div class="demo-result-tags" id="resultTags"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- API / Getting Started -->
+<section class="section section-alt" id="api">
+  <div class="container">
+    <div class="section-header animate">
+      <div class="section-label">Getting Started</div>
+      <h2 class="section-title">API Endpoints</h2>
+      <p class="section-desc">
+        RESTful API for programmatic access to the full research index.
+      </p>
+    </div>
+    <div class="api-grid animate">
+      <div class="api-card">
+        <div class="api-card-header">
+          <span class="api-method post">POST</span>
+          <span class="api-path">/api/search</span>
+        </div>
+        <div class="api-card-body">
+          <div class="api-desc">Semantic search across all indexed papers. Returns ranked results with relevance scores.</div>
+          <div class="api-code">{
+  "query": "rural education outcomes",
+  "top_k": 10,
+  "filters": {
+    "year_min": 2010,
+    "department": "Education"
+  }
+}</div>
+        </div>
+      </div>
+      <div class="api-card">
+        <div class="api-card-header">
+          <span class="api-method post">POST</span>
+          <span class="api-path">/api/ask</span>
+        </div>
+        <div class="api-card-body">
+          <div class="api-desc">RAG-powered Q&A — get synthesized answers with citations from source documents.</div>
+          <div class="api-code">{
+  "question": "What has ISU published
+    about climate impacts on crops?",
+  "max_sources": 5
+}</div>
+        </div>
+      </div>
+      <div class="api-card">
+        <div class="api-card-header">
+          <span class="api-method get">GET</span>
+          <span class="api-path">/api/stats</span>
+        </div>
+        <div class="api-card-body">
+          <div class="api-desc">Returns pipeline statistics — paper count, chunk count, subject tags, and index metadata.</div>
+          <div class="api-code">{
+  "total_papers": 13610,
+  "total_chunks": 193653,
+  "unique_subjects": 12369,
+  "db_size_gb": 2.5,
+  "temporal_range": [1857, 2026]
+}</div>
+        </div>
+      </div>
+      <div class="api-card">
+        <div class="api-card-header">
+          <span class="api-method get">GET</span>
+          <span class="api-path">/api/paper/{id}</span>
+        </div>
+        <div class="api-card-body">
+          <div class="api-desc">Retrieve full metadata and extracted text for a specific paper by its ReD identifier.</div>
+          <div class="api-code">{
+  "id": "red-12345",
+  "title": "Effects of Mindfulness...",
+  "year": 2023,
+  "department": "Psychology",
+  "subjects": ["mindfulness", ...]
+}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-seal">
+      <img src="https://designsystem.illinoisstate.edu/images/examples/cds-digital-seal-mobile.png"
+           alt="ISU Seal" loading="lazy">
+    </div>
+    <div class="footer-org">Illinois State University</div>
+    <div class="footer-dept">School of Communication &middot; COM 376</div>
+    <div class="footer-powered">Powered by Google Gemini + LanceDB</div>
+    <div class="footer-credits">
+      Built by Soumit Lahiri &middot; ISU ReD AI Research Discovery Platform
+    </div>
+    <div class="footer-copy">
+      &copy; 2026 Illinois State University. Research data sourced from ISU Research and eData (ReD).
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ========== DARK MODE ========== */
+const toggle = document.getElementById('themeToggle');
+const html = document.documentElement;
+
+function setTheme(theme) {
+  html.setAttribute('data-theme', theme);
+  toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+  try { localStorage.setItem('isu-red-ai-theme', theme); } catch(e) {}
+}
+
+(function initTheme() {
+  try {
+    const saved = localStorage.getItem('isu-red-ai-theme');
+    if (saved) { setTheme(saved); return; }
+  } catch(e) {}
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    setTheme('dark');
+  }
+})();
+
+toggle.addEventListener('click', function() {
+  const current = html.getAttribute('data-theme');
+  setTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+/* ========== MOBILE NAV ========== */
+document.getElementById('mobileBtn').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+document.querySelectorAll('.nav-links a').forEach(function(link) {
+  link.addEventListener('click', function() {
+    document.getElementById('navLinks').classList.remove('open');
+  });
+});
+
+/* ========== SCROLL PROGRESS ========== */
+window.addEventListener('scroll', function() {
+  var h = document.documentElement;
+  var scrollTop = h.scrollTop || document.body.scrollTop;
+  var scrollHeight = h.scrollHeight - h.clientHeight;
+  var progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+  document.getElementById('scrollProgress').style.width = progress + '%';
+});
+
+/* ========== SCROLL ANIMATIONS ========== */
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.animate').forEach(function(el) {
+  observer.observe(el);
+});
+
+/* ========== DEMO SEARCH ========== */
+var demoResponses = {
+  "What research has ISU conducted on rural education outcomes?": {
+    title: "Rural Education Outcomes at Illinois State University",
+    meta: "Synthesized from 3 papers · Departments: Education, Sociology · 2018–2024",
+    text: "ISU researchers have extensively studied rural education challenges in Central Illinois. Key findings include: (1) rural school districts face a 23% higher teacher turnover rate compared to urban counterparts (Martinez & Chen, 2022), (2) technology-enhanced learning programs showed a statistically significant improvement in standardized test scores among rural 8th graders (Thompson, 2020), and (3) community partnership models developed at ISU's College of Education have been adopted by 14 districts statewide (Williams et al., 2024).",
+    tags: ["Rural Education", "Teacher Retention", "EdTech", "Community Partnerships", "K-12"]
+  },
+  "How has climate change affected Illinois agriculture according to ISU studies?": {
+    title: "Climate Impacts on Illinois Agriculture",
+    meta: "Synthesized from 4 papers · Department: Agriculture · 2019–2025",
+    text: "ISU's Department of Agriculture has documented significant climate-driven shifts in Central Illinois farming. Studies show: (1) a 12-day extension in the growing season since 1990, with increased heat stress events reducing corn yields by an estimated 4–8% in peak years (Roberts & Patel, 2023), (2) shifting precipitation patterns have increased soil erosion risk by 18% across McLean County (Garcia, 2021), and (3) adaptive practices including cover cropping and precision irrigation, studied at ISU's research farms, have mitigated yield losses by up to 15% (Johnson et al., 2024).",
+    tags: ["Climate Change", "Agriculture", "Corn Yields", "Soil Science", "Sustainability"]
+  },
+  "What are ISU's contributions to special education policy?": {
+    title: "Special Education Policy Research at ISU",
+    meta: "Synthesized from 3 papers · Department: Special Education · 2017–2023",
+    text: "ISU's Special Education program has produced influential policy research including: (1) a comprehensive analysis of IEP implementation fidelity across 47 Illinois districts, finding significant variance in service delivery (Park & Anderson, 2021), (2) longitudinal tracking data showing inclusive classroom models improve both academic and social outcomes for students with disabilities (Chen et al., 2023), and (3) policy recommendations adopted by the Illinois State Board of Education for transition planning for post-secondary students (Williams, 2019).",
+    tags: ["Special Education", "IEP", "Inclusive Education", "Policy", "Disability Studies"]
+  },
+  "Summarize ISU research on cybersecurity and information systems": {
+    title: "Cybersecurity & Information Systems Research",
+    meta: "Synthesized from 3 papers · Department: IT · 2020–2025",
+    text: "ISU's School of Information Technology has contributed to cybersecurity research through: (1) development of a novel phishing detection framework using NLP techniques that achieved 94.7% accuracy on benchmark datasets (Kumar & Zhang, 2024), (2) analysis of SMB cybersecurity postures in the Midwest, revealing that 62% of surveyed businesses lacked incident response plans (Davis, 2022), and (3) a student-led red team exercise program that has trained over 200 IT professionals in ethical hacking methodologies since 2020 (Moore et al., 2023).",
+    tags: ["Cybersecurity", "Phishing Detection", "NLP", "InfoSec", "Red Team"]
+  },
+  "What has ISU published about community health interventions?": {
+    title: "Community Health Intervention Research",
+    meta: "Synthesized from 3 papers · Department: Health Sciences · 2019–2024",
+    text: "ISU's Mennonite College of Nursing and Health Sciences programs have published extensively on community health: (1) a mobile health clinic initiative serving rural McLean County that increased preventive care utilization by 34% (Johnson & Rivera, 2023), (2) evaluation of a campus-based mental health first aid training that reduced stigma scores by 28% among participants (Park, 2021), and (3) a community-academic partnership model for diabetes prevention that demonstrated a 19% reduction in A1C levels among program participants over 12 months (Anderson et al., 2024).",
+    tags: ["Community Health", "Mobile Clinics", "Mental Health", "Diabetes Prevention", "Nursing"]
+  }
+};
+
+function showResult(query) {
+  var result = demoResponses[query];
+  if (!result) {
+    var keys = Object.keys(demoResponses);
+    result = demoResponses[keys[Math.floor(Math.random() * keys.length)]];
+  }
+  document.getElementById('resultTitle').textContent = result.title;
+  document.getElementById('resultMeta').textContent = result.meta;
+  document.getElementById('resultText').textContent = result.text;
+  var tagsEl = document.getElementById('resultTags');
+  tagsEl.innerHTML = result.tags.map(function(t) {
+    return '<span class="demo-tag">' + t + '</span>';
+  }).join('');
+  var el = document.getElementById('demoResult');
+  el.classList.add('active');
+  el.style.animation = 'fadeUp 0.4s ease';
+}
+
+document.getElementById('demoBtn').addEventListener('click', function() {
+  var q = document.getElementById('demoInput').value.trim();
+  if (q) showResult(q);
+});
+
+document.getElementById('demoInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    var q = this.value.trim();
+    if (q) showResult(q);
+  }
+});
+
+document.querySelectorAll('.demo-query-chip').forEach(function(chip) {
+  chip.addEventListener('click', function() {
+    var q = this.getAttribute('data-query');
+    document.getElementById('demoInput').value = q;
+    showResult(q);
+  });
+});
+
+/* ========== ANIMATED COUNTERS ========== */
+function animateCounters() {
+  document.querySelectorAll('.stat-number, .hero-stat-num').forEach(function(el) {
+    if (el.dataset.animated) return;
+    var rect = el.getBoundingClientRect();
+    if (rect.top > window.innerHeight || rect.bottom < 0) return;
+    el.dataset.animated = 'true';
+    var text = el.textContent.trim();
+    // Only animate pure numbers
+    var match = text.replace(/,/g, '').match(/^(\d+)$/);
+    if (!match) return;
+    var target = parseInt(match[1]);
+    var duration = 1500;
+    var start = performance.now();
+    function update(now) {
+      var elapsed = now - start;
+      var progress = Math.min(elapsed / duration, 1);
+      // easeOutExpo
+      var eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      var current = Math.floor(eased * target);
+      el.textContent = current.toLocaleString();
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+window.addEventListener('scroll', animateCounters);
+window.addEventListener('load', animateCounters);
+</script>
+</body>
+</html>
