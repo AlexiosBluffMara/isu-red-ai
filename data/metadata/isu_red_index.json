@@ -1,13 +1,16 @@
 {
-  "generated_at": "2026-03-27T15:06:56",
+  "generated_at": "2026-03-28T23:42:51",
   "pipeline_status": {
     "total_papers_in_db": 20224,
-    "pdfs_downloaded": 14007,
-    "pdfs_extracted": 608,
-    "extraction_completion_pct": 4.3,
-    "lancedb_chunks": 0,
+    "pdfs_downloaded": 16356,
+    "pdfs_extracted": 13613,
+    "extraction_completion_pct": 83.2,
+    "lancedb_chunks": 193653,
     "openclaw_memory_files": 370,
-    "openclaw_memory_chunks": 1483
+    "openclaw_memory_chunks": 1483,
+    "lancedb_embedding_dim": 3072,
+    "lancedb_model": "gemini-embedding-2-preview",
+    "lancedb_size_gb": 2.5
   },
   "content_stats": {
     "docs_with_metadata": 532,

@@ -305,8 +305,8 @@ def grounded_generate(project: str, location: str, query: str) -> None:
             parts=[
                 discoveryengine.GroundedGenerationContent.Part(
                     text=(
-                        "You are a research assistant for Iowa State University's "
-                        "ReD (Research and Demonstration Farm) repository. Answer "
+                        "You are a research assistant for Illinois State University's "
+                        "ReD (Research and eData) repository. Answer "
                         "questions using only the grounded documents. Cite sources."
                     ),
                 ),
