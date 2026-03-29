@@ -13,25 +13,31 @@ from pathlib import Path
 
 
 def _find_papers_db() -> str:
-    """Locate papers_database.json (check env, metadata dir, then symlinked source)."""
+    """Locate papers_database.json with multiple fallback strategies."""
+    # 1. Explicit env var
     env_path = os.environ.get("PAPERS_DB", "")
     if env_path and os.path.isfile(env_path):
         return env_path
 
-    base = Path(__file__).parent.parent / "data" / "metadata"
-    local = base / "papers_database.json"
+    base = Path(__file__).parent.parent / "data"
+
+    # 2. Standard config path (works in Docker with volume mount)
+    local = base / "metadata" / "papers_database.json"
     if local.is_file():
         return str(local)
 
-    # Follow the symlinked research dir
-    research_dir = Path(__file__).parent.parent / "data" / "pdfs"
-    if research_dir.is_symlink():
-        parent = research_dir.resolve().parent
-        candidate = parent / "papers_database.json"
-        if candidate.is_file():
-            return str(candidate)
+    # 3. Follow symlinked data dir (dev environment)
+    for symlink_name in ("pdfs", "extracted"):
+        link = base / symlink_name
+        if link.is_symlink():
+            parent = link.resolve().parent
+            candidate = parent / "papers_database.json"
+            if candidate.is_file():
+                return str(candidate)
 
-    raise FileNotFoundError("papers_database.json not found")
+    raise FileNotFoundError(
+        "papers_database.json not found. Set PAPERS_DB env var or place in data/metadata/"
+    )
 
 
 @lru_cache(maxsize=1)

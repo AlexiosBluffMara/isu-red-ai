@@ -6,6 +6,15 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      - LANCEDB_DIR=/app/data/lancedb
+      - PAPERS_DB=/app/data/metadata/papers_database.json
     volumes:
-      - ./data:/app/data
+      - ./data:/app/data:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

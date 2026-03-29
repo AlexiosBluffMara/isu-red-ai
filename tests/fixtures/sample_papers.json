@@ -1,0 +1,82 @@
+[
+  {
+    "id": "test-001",
+    "title": "Machine Learning Applications in Higher Education",
+    "authors": ["Smith, John", "Doe, Jane"],
+    "date": "2023-05-15",
+    "subjects": ["Computer Science", "Higher Education", "Machine Learning"],
+    "abstract": "This paper explores the application of machine learning techniques in higher education settings, focusing on student performance prediction and adaptive learning systems.",
+    "pdf_url": "https://ir.library.illinoisstate.edu/fpml/test-001/download",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-001"
+  },
+  {
+    "id": "test-002",
+    "title": "Cybersecurity Threats in Educational Institutions",
+    "authors": ["Johnson, Alice"],
+    "date": "2022-11-01",
+    "subjects": ["Cybersecurity", "Higher Education Administration"],
+    "abstract": "An analysis of emerging cybersecurity threats targeting university systems and recommended mitigation strategies.",
+    "pdf_url": "https://ir.library.illinoisstate.edu/fpml/test-002/download",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-002"
+  },
+  {
+    "id": "test-003",
+    "title": "The Role of Music Education in Child Development",
+    "authors": ["Williams, Robert", "Brown, Sarah", "Davis, Michael"],
+    "date": "2021-03-20",
+    "subjects": ["Music Performance", "Child Development", "Education"],
+    "abstract": "A longitudinal study examining the effects of early music education on cognitive and social development in children aged 5-12.",
+    "pdf_url": "",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-003"
+  },
+  {
+    "id": "test-004",
+    "title": "Agricultural Innovation and Climate Resilience",
+    "authors": ["Garcia, Maria"],
+    "date": "2024-01-10",
+    "subjects": ["Agriculture", "Climate Change", "Sustainability"],
+    "abstract": "",
+    "pdf_url": "https://ir.library.illinoisstate.edu/fpml/test-004/download",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-004"
+  },
+  {
+    "id": "test-005",
+    "title": "Criminal Justice Reform: A Quantitative Analysis",
+    "authors": ["Taylor, James", "Anderson, Lisa"],
+    "date": "2020-09-05",
+    "subjects": ["Criminal Justice", "Public Policy", "Social Science"],
+    "abstract": "This study employs quantitative methods to evaluate the effectiveness of criminal justice reform initiatives across multiple states.",
+    "pdf_url": "https://ir.library.illinoisstate.edu/fpml/test-005/download",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-005"
+  },
+  {
+    "id": "test-006",
+    "title": "Nursing Best Practices in Rural Healthcare",
+    "authors": ["Wilson, Emily"],
+    "date": "2019-06-15",
+    "subjects": ["Nursing", "Healthcare", "Rural Health"],
+    "abstract": "An evidence-based review of nursing practices adapted for rural healthcare settings with limited resources.",
+    "pdf_url": "https://ir.library.illinoisstate.edu/fpml/test-006/download",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-006"
+  },
+  {
+    "id": "test-007",
+    "title": "Shakespeare in the Digital Age",
+    "authors": ["Martinez, Carlos"],
+    "date": "1998-12-01",
+    "subjects": ["English", "Literature", "Digital Humanities"],
+    "abstract": "Examining how digital tools transform the study and performance of Shakespeare's works in contemporary education.",
+    "pdf_url": "",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-007"
+  },
+  {
+    "id": "test-008",
+    "title": "Biology Lab Safety Protocols for Undergraduate Programs",
+    "authors": ["Lee, Jennifer", "Park, David"],
+    "date": "2023-08-22",
+    "subjects": ["Biology", "Laboratory Safety", "Higher Education"],
+    "abstract": "A comprehensive guide to laboratory safety protocols specifically designed for undergraduate biology programs.",
+    "pdf_url": "https://ir.library.illinoisstate.edu/fpml/test-008/download",
+    "url": "https://ir.library.illinoisstate.edu/fpml/test-008"
+  }
+]

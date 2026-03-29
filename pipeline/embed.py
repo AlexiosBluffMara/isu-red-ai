@@ -124,20 +124,20 @@ async def embed_batch(
 
 def get_or_create_table(db: lancedb.DBConnection) -> lancedb.table.Table:
     """Open existing table or create with schema."""
-    try:
+    existing = [t for t in db.table_names()] if hasattr(db, 'table_names') else list(db.list_tables())
+    if TABLE_NAME in existing:
         return db.open_table(TABLE_NAME)
-    except Exception:
-        schema = pa.schema([
-            pa.field("text", pa.string()),
-            pa.field("source_file", pa.string()),
-            pa.field("title", pa.string()),
-            pa.field("authors", pa.string()),
-            pa.field("year", pa.string()),
-            pa.field("pdf_url", pa.string()),
-            pa.field("chunk_idx", pa.int32()),
-            pa.field("vector", pa.list_(pa.float32(), EMBED_DIM)),
-        ])
-        return db.create_table(TABLE_NAME, schema=schema)
+    schema = pa.schema([
+        pa.field("text", pa.string()),
+        pa.field("source_file", pa.string()),
+        pa.field("title", pa.string()),
+        pa.field("authors", pa.string()),
+        pa.field("year", pa.string()),
+        pa.field("pdf_url", pa.string()),
+        pa.field("chunk_idx", pa.int32()),
+        pa.field("vector", pa.list_(pa.float32(), EMBED_DIM)),
+    ])
+    return db.create_table(TABLE_NAME, schema=schema)
 
 
 # ── Main pipeline ─────────────────────────────────────────────────────

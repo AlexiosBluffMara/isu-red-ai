@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """ISU ReD AI — Web Application (FastAPI)."""
 
+import logging
 import os
 import sys
+import time
 import html
+import uuid
 
 from dotenv import load_dotenv
 
@@ -13,9 +16,11 @@ load_dotenv()
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from search.engine import rag_answer, search
 from web.papers_data import (
@@ -30,13 +35,110 @@ from web.papers_data import (
     search_papers,
 )
 
-app = FastAPI(title="ISU ReD AI", version="2.0.0")
+# ── Logging ───────────────────────────────────────────────────────────
+
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+log = logging.getLogger("isu-red-ai.web")
+
+# ── App ───────────────────────────────────────────────────────────────
+
+app = FastAPI(
+    title="ISU ReD AI",
+    version="2.1.0",
+    docs_url="/api/docs" if os.environ.get("ENABLE_DOCS") else None,
+    redoc_url=None,
+)
+
+# ── Middleware ────────────────────────────────────────────────────────
+
+ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ORIGINS", "http://localhost:8080,http://localhost:3000"
+).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+    max_age=3600,
+)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        return response
+
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request_id = str(uuid.uuid4())[:8]
+        start = time.perf_counter()
+        response = await call_next(request)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        if request.url.path.startswith("/api/"):
+            log.info(
+                "[%s] %s %s → %d (%.0fms)",
+                request_id, request.method, request.url.path,
+                response.status_code, elapsed_ms,
+            )
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
+
+# ── Static/Templates ─────────────────────────────────────────────────
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+
+# ── Health ────────────────────────────────────────────────────────────
+
+@app.get("/health")
+async def health():
+    """Liveness probe for Cloud Run / load balancers."""
+    return {"status": "healthy"}
+
+
+@app.get("/ready")
+async def readiness():
+    """Readiness probe — verifies data + model access."""
+    checks = {}
+    try:
+        stats = compute_overview_stats()
+        checks["papers_db"] = stats["total_papers"] > 0
+    except Exception:
+        checks["papers_db"] = False
+    try:
+        import lancedb
+        db_dir = os.environ.get(
+            "LANCEDB_DIR",
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "lancedb"),
+        )
+        db = lancedb.connect(db_dir)
+        db.open_table("isu_red_papers")
+        checks["lancedb"] = True
+    except Exception:
+        checks["lancedb"] = False
+    ready = all(checks.values())
+    return JSONResponse(
+        {"status": "ready" if ready else "degraded", "checks": checks},
+        status_code=200 if ready else 503,
+    )
 
 
 # ── Pages ─────────────────────────────────────────────────────────────
@@ -54,7 +156,11 @@ async def api_search(q: str, k: int = 10, year: str | None = None):
     if not q or not q.strip():
         return JSONResponse({"error": "Query required"}, status_code=400)
     q = q.strip()[:500]
-    results = search(q, top_k=min(k, 50), year_filter=year)
+    try:
+        results = search(q, top_k=min(k, 50), year_filter=year)
+    except Exception as exc:
+        log.error("Search failed: %s", exc)
+        return JSONResponse({"error": "Search unavailable"}, status_code=503)
     return {"query": q, "results": results, "count": len(results)}
 
 
@@ -64,7 +170,11 @@ async def api_ask(q: str, k: int = 8):
     if not q or not q.strip():
         return JSONResponse({"error": "Query required"}, status_code=400)
     q = q.strip()[:500]
-    result = rag_answer(q, top_k=min(k, 20))
+    try:
+        result = rag_answer(q, top_k=min(k, 20))
+    except Exception as exc:
+        log.error("RAG failed: %s", exc)
+        return JSONResponse({"error": "AI answer unavailable"}, status_code=503)
     result["answer"] = html.escape(result["answer"])
     return result
 

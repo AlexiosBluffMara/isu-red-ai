@@ -153,7 +153,8 @@ status: ## Show data counts and system status
 # ── Cleanup ───────────────────────────────────────────────────────────
 
 test: install ## Run tests
-	$(PYTHON) -m pytest tests/ -v --tb=short 2>/dev/null || echo "No tests found yet."
+	PAPERS_DB=tests/fixtures/sample_papers.json GEMINI_API_KEY=test-key \
+		$(PYTHON) -m pytest tests/ -v --tb=short
 
 clean: ## Remove venv and Python caches
 	rm -rf $(VENV) __pycache__ pipeline/__pycache__ search/__pycache__ web/__pycache__
