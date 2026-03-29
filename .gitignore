@@ -40,3 +40,4 @@ Thumbs.db
 # Secrets
 *.token.json
 credentials/
+*.bak

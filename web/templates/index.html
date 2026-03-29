@@ -605,12 +605,22 @@ function renderSearchResults(results) {
   results.forEach(function(r, i) {
     var score = r.score ? (r.score * 100).toFixed(1) : '&mdash;';
     var pdfBtn = r.pdf_url ? '<a href="'+esc(r.pdf_url)+'" target="_blank" rel="noopener" class="btn-sm btn-primary">Download PDF</a>' : '';
+    var pageBtn = r.page_url ? ' <a href="'+esc(r.page_url)+'" target="_blank" rel="noopener" class="btn-sm" style="background:#56758F;color:#fff">View on ReD</a>' : '';
+    var abstract = r.abstract ? '<div class="excerpt" style="margin-top:8px;font-style:italic;color:#555">'+esc(r.abstract.substring(0,300))+(r.abstract.length>300?'…':'')+'</div>' : '';
+    var subjects = '';
+    if (r.subjects && r.subjects.length) {
+      subjects = '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">';
+      r.subjects.slice(0,5).forEach(function(s) { subjects += '<span style="background:#f0f4f8;padding:2px 8px;border-radius:12px;font-size:0.75rem;color:#56758F">'+esc(s)+'</span>'; });
+      if (r.subjects.length > 5) subjects += '<span style="font-size:0.75rem;color:#999">+' + (r.subjects.length-5) + ' more</span>';
+      subjects += '</div>';
+    }
     html += '<div class="result-card fade-in" style="animation-delay:'+i*0.04+'s">'
       + '<div class="title">'+esc(r.title||'Untitled')+'</div>'
       + '<div class="meta">'+esc(r.authors||'Unknown')+' &middot; '+esc(String(r.year||'Unknown'))
       + ' <span class="score-badge">'+score+'% match</span></div>'
+      + abstract + subjects
       + '<div class="excerpt">'+esc((r.text||'').substring(0,400))+'</div>'
-      + '<div style="margin-top:10px">'+pdfBtn+'</div></div>';
+      + '<div style="margin-top:10px">'+pdfBtn+pageBtn+'</div></div>';
   });
   c.innerHTML = html;
 }
@@ -681,7 +691,7 @@ async function loadDashboard() {
   var tot = stats.total_papers || 1;
   new Chart(document.getElementById('completenessChart'), {
     type:'bar',
-    data:{labels:['Abstracts','PDFs','Subjects','Authors'],datasets:[{label:'% Complete',data:[((stats.with_abstracts||0)/tot*100).toFixed(1),((stats.with_pdfs||0)/tot*100).toFixed(1),(14635/tot*100).toFixed(1),(20190/tot*100).toFixed(1)],backgroundColor:['#CE1126','#F6A917','#56758F','#048A81'],borderRadius:4}]},
+    data:{labels:['Abstracts','PDFs','Subjects','Authors'],datasets:[{label:'% Complete',data:[((stats.with_abstracts||0)/tot*100).toFixed(1),((stats.with_pdfs||0)/tot*100).toFixed(1),((stats.with_subjects||0)/tot*100).toFixed(1),((stats.unique_authors||0)/tot*100).toFixed(1)],backgroundColor:['#CE1126','#F6A917','#56758F','#048A81'],borderRadius:4}]},
     options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'% of Papers'}}}}
   });
 }

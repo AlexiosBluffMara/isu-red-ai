@@ -22,7 +22,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from search.engine import rag_answer, search
+from search.engine import rag_answer, search, search_similar
+from web.middleware import RateLimitMiddleware, cache
 from web.papers_data import (
     compute_decade_counts,
     compute_overview_stats,
@@ -32,6 +33,7 @@ from web.papers_data import (
     compute_wordcloud,
     compute_year_counts,
     get_paper_detail,
+    load_papers,
     search_papers,
 )
 
@@ -48,7 +50,8 @@ log = logging.getLogger("isu-red-ai.web")
 
 app = FastAPI(
     title="ISU ReD AI",
-    version="2.1.0",
+    version="2.2.0",
+    description="AI-powered research discovery for Illinois State University's ReD repository.",
     docs_url="/api/docs" if os.environ.get("ENABLE_DOCS") else None,
     redoc_url=None,
 )
@@ -96,6 +99,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(
+    RateLimitMiddleware,
+    requests_per_second=float(os.environ.get("RATE_LIMIT_RPS", "2")),
+    burst=int(os.environ.get("RATE_LIMIT_BURST", "30")),
+)
 
 # ── Static/Templates ─────────────────────────────────────────────────
 
@@ -150,7 +158,41 @@ async def home(request: Request):
 
 # ── Search API ────────────────────────────────────────────────────────
 
-@app.get("/api/search")
+def _build_title_index() -> dict[str, dict]:
+    """Build a lookup from normalized title → paper metadata. Cached."""
+    cached = cache.get("_title_index", "")
+    if cached is not None:
+        return cached
+    papers = load_papers()
+    idx = {}
+    for p in papers:
+        title = (p.get("title") or "").strip().lower()
+        if title:
+            idx[title] = {
+                "abstract": p.get("abstract", ""),
+                "subjects": p.get("subjects", []),
+                "page_url": p.get("page_url", ""),
+                "doi": p.get("doi", ""),
+                "date": p.get("date", ""),
+            }
+    cache.set("_title_index", "", idx, ttl=3600)
+    return idx
+
+
+def _enrich_results(results: list[dict]):
+    """Mutate search results in-place to add abstract/subjects from papers DB."""
+    idx = _build_title_index()
+    for r in results:
+        title_key = (r.get("title") or "").strip().lower()
+        meta = idx.get(title_key)
+        if meta:
+            r.setdefault("abstract", meta["abstract"])
+            r.setdefault("subjects", meta["subjects"])
+            r.setdefault("page_url", meta["page_url"])
+            r.setdefault("doi", meta["doi"])
+
+
+@app.get("/api/search", tags=["Search"])
 async def api_search(q: str, k: int = 10, year: str | None = None):
     """Vector similarity search."""
     if not q or not q.strip():
@@ -161,10 +203,11 @@ async def api_search(q: str, k: int = 10, year: str | None = None):
     except Exception as exc:
         log.error("Search failed: %s", exc)
         return JSONResponse({"error": "Search unavailable"}, status_code=503)
+    _enrich_results(results)
     return {"query": q, "results": results, "count": len(results)}
 
 
-@app.get("/api/ask")
+@app.get("/api/ask", tags=["Search"])
 async def api_ask(q: str, k: int = 8):
     """RAG: search + AI-generated answer."""
     if not q or not q.strip():
@@ -179,69 +222,93 @@ async def api_ask(q: str, k: int = 8):
     return result
 
 
-# ── Data / Visualization API ─────────────────────────────────────────
+# ── Data / Visualization API (cached) ─────────────────────────────────
 
-@app.get("/api/stats")
+def _cached_json(path: str, query: str, compute_fn, ttl: int = 600):
+    """Return cached data or compute and cache it."""
+    hit = cache.get(path, query)
+    if hit is not None:
+        return hit
+    data = compute_fn()
+    cache.set(path, query, data, ttl=ttl)
+    return data
+
+
+@app.get("/api/stats", tags=["Data"])
 async def api_stats():
     """Return database statistics."""
-    try:
-        import lancedb
-        db_dir = os.environ.get(
-            "LANCEDB_DIR",
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "lancedb"),
-        )
-        db = lancedb.connect(db_dir)
-        table = db.open_table("isu_red_papers")
-        chunk_count = table.count_rows()
-    except Exception:
-        chunk_count = 0
+    def compute():
+        try:
+            import lancedb
+            db_dir = os.environ.get(
+                "LANCEDB_DIR",
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "lancedb"),
+            )
+            db = lancedb.connect(db_dir)
+            table = db.open_table("isu_red_papers")
+            chunk_count = table.count_rows()
+        except Exception:
+            chunk_count = 0
 
-    overview = compute_overview_stats()
-    return {
-        "total_papers": overview["total_papers"],
-        "total_chunks": chunk_count,
-        "with_abstracts": overview["with_abstracts"],
-        "with_pdfs": overview["with_pdfs"],
-        "unique_subjects": overview["unique_subjects"],
-        "year_range": f"{overview['year_min']}–{overview['year_max']}",
-        "embedding_dim": 3072,
-        "model": "gemini-embedding-2-preview",
-        "status": "operational",
-    }
+        overview = compute_overview_stats()
+        return {
+            "total_papers": overview["total_papers"],
+            "total_chunks": chunk_count,
+            "with_abstracts": overview["with_abstracts"],
+            "with_pdfs": overview["with_pdfs"],
+            "with_subjects": overview["with_subjects"],
+            "unique_subjects": overview["unique_subjects"],
+            "unique_authors": overview["top_authors_count"],
+            "year_range": f"{overview['year_min']}–{overview['year_max']}",
+            "embedding_dim": 3072,
+            "model": "gemini-embedding-2-preview",
+            "status": "operational",
+        }
+    return _cached_json("/api/stats", "", compute, ttl=900)
 
 
-@app.get("/api/subjects")
+@app.get("/api/subjects", tags=["Data"])
 async def api_subjects(limit: int = 50):
     """Subject distribution for charts."""
-    subjects = compute_subject_counts()
-    return {"subjects": subjects[:min(limit, 500)], "total_unique": len(subjects)}
+    def compute():
+        subjects = compute_subject_counts()
+        return {"subjects": subjects[:min(limit, 500)], "total_unique": len(subjects)}
+    return _cached_json("/api/subjects", f"limit={limit}", compute)
 
 
-@app.get("/api/years")
+@app.get("/api/years", tags=["Data"])
 async def api_years():
     """Year distribution for timeline charts."""
-    return {"years": compute_year_counts(), "decades": compute_decade_counts()}
+    def compute():
+        return {"years": compute_year_counts(), "decades": compute_decade_counts()}
+    return _cached_json("/api/years", "", compute)
 
 
-@app.get("/api/categories")
+@app.get("/api/categories", tags=["Data"])
 async def api_categories():
     """Broad academic categories for subject browsing grid."""
-    return {"categories": compute_subject_categories()}
+    def compute():
+        return {"categories": compute_subject_categories()}
+    return _cached_json("/api/categories", "", compute)
 
 
-@app.get("/api/wordcloud")
+@app.get("/api/wordcloud", tags=["Data"])
 async def api_wordcloud():
     """Word frequency data for word cloud visualization."""
-    return {"words": compute_wordcloud()}
+    def compute():
+        return {"words": compute_wordcloud()}
+    return _cached_json("/api/wordcloud", "", compute)
 
 
-@app.get("/api/authors")
+@app.get("/api/authors", tags=["Data"])
 async def api_authors(limit: int = 50):
     """Top authors by publication count."""
-    return {"authors": compute_top_authors(min(limit, 200))}
+    def compute():
+        return {"authors": compute_top_authors(min(limit, 200))}
+    return _cached_json("/api/authors", f"limit={limit}", compute)
 
 
-@app.get("/api/papers")
+@app.get("/api/papers", tags=["Browse"])
 async def api_papers(
     q: str = "",
     subject: str = "",
@@ -263,13 +330,36 @@ async def api_papers(
     )
 
 
-@app.get("/api/paper/{index}")
+@app.get("/api/paper/{index}", tags=["Browse"])
 async def api_paper(index: int):
     """Get a single paper by index."""
     paper = get_paper_detail(index)
     if paper is None:
         return JSONResponse({"error": "Paper not found"}, status_code=404)
     return paper
+
+
+@app.get("/api/paper/{index}/similar", tags=["Search"])
+async def api_similar(index: int, k: int = 8):
+    """Find papers similar to a given paper using vector similarity."""
+    paper = get_paper_detail(index)
+    if paper is None:
+        return JSONResponse({"error": "Paper not found"}, status_code=404)
+    # Use title + abstract as the similarity query
+    query_text = paper.get("title", "")
+    abstract = paper.get("abstract", "")
+    if abstract:
+        query_text += ". " + abstract[:500]
+    if not query_text.strip():
+        return JSONResponse({"error": "Paper has no text to compare"}, status_code=400)
+    try:
+        results = search_similar(query_text, top_k=min(k, 20), exclude_title=paper.get("title"))
+        # Enrich with metadata from papers_database.json
+        _enrich_results(results)
+    except Exception as exc:
+        log.error("Similar search failed: %s", exc)
+        return JSONResponse({"error": "Similar search unavailable"}, status_code=503)
+    return {"paper": paper["title"], "similar": results, "count": len(results)}
 
 
 if __name__ == "__main__":

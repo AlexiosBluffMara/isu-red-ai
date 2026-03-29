@@ -40,6 +40,9 @@ def _set_papers_db_env(monkeypatch):
         compute_overview_stats,
     ]:
         fn.cache_clear()
+    # Also clear the response cache
+    from web.middleware import cache
+    cache.invalidate()
 
 
 @pytest.fixture

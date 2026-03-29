@@ -47,7 +47,7 @@ def search(query: str, top_k: int = 10, year_filter: str | None = None) -> list[
 
     results = (
         table.search(query_vec)
-        .limit(top_k)
+        .limit(top_k * 3)  # fetch extra for dedup
         .to_list()
     )
 
@@ -69,11 +69,22 @@ def search(query: str, top_k: int = 10, year_filter: str | None = None) -> list[
             "source_file": r.get("source_file", ""),
             "pdf_url": r.get("pdf_url", ""),
             "text": r.get("text", ""),
-            "score": 1 - r.get("_distance", 0),  # convert distance to similarity
+            "score": 1 - r.get("_distance", 0),
             "chunk_idx": r.get("chunk_idx", 0),
         })
+        if len(output) >= top_k:
+            break
 
     return output
+
+
+def search_similar(query_text: str, top_k: int = 8, exclude_title: str | None = None) -> list[dict]:
+    """Find papers similar to a given text, optionally excluding a specific title."""
+    results = search(query_text, top_k=top_k + 5)
+    if exclude_title:
+        exclude_lower = exclude_title.strip().lower()
+        results = [r for r in results if r.get("title", "").strip().lower() != exclude_lower]
+    return results[:top_k]
 
 
 def rag_answer(query: str, top_k: int = 8) -> dict:

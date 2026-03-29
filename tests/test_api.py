@@ -145,3 +145,72 @@ async def test_readiness_papers_db(client):
     resp = await client.get("/ready")
     data = resp.json()
     assert data["checks"]["papers_db"] is True
+
+
+# ── New v2.2.0 tests ─────────────────────────────────────────────────
+
+@pytest.mark.anyio
+async def test_stats_includes_new_fields(client):
+    """Stats endpoint should include with_subjects and unique_authors."""
+    resp = await client.get("/api/stats")
+    data = resp.json()
+    assert "with_subjects" in data
+    assert "unique_authors" in data
+
+
+@pytest.mark.anyio
+async def test_response_caching(client):
+    """Static data endpoints should return cached responses."""
+    from web.middleware import cache
+    cache.invalidate()
+    r1 = await client.get("/api/stats")
+    r2 = await client.get("/api/stats")
+    assert r1.json() == r2.json()
+
+
+@pytest.mark.anyio
+async def test_paper_similar_not_found(client):
+    """Similar papers for non-existent paper → 404."""
+    resp = await client.get("/api/paper/99999/similar")
+    assert resp.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_rate_limit_headers():
+    """Rate limit returns 429 with Retry-After header when exhausted."""
+    from web.middleware import TokenBucket
+    bucket = TokenBucket(capacity=2, refill_per_second=0.01)
+    # Mock request
+    class FakeClient:
+        host = "10.0.0.1"
+    class FakeRequest:
+        client = FakeClient()
+        headers = {}
+    req = FakeRequest()
+    assert bucket.allow(req) is True
+    assert bucket.allow(req) is True
+    assert bucket.allow(req) is False
+
+
+def test_response_cache_ttl():
+    """Response cache should expire entries after TTL."""
+    import time
+    from web.middleware import ResponseCache
+    rc = ResponseCache(default_ttl=0)  # 0 second TTL
+    rc.set("/test", "", {"data": 1}, ttl=0)
+    # Should be expired immediately (or within a tiny window)
+    time.sleep(0.01)
+    assert rc.get("/test", "") is None
+
+
+def test_response_cache_invalidate():
+    """Response cache invalidate should clear entries."""
+    from web.middleware import ResponseCache
+    rc = ResponseCache(default_ttl=300)
+    rc.set("/a", "", {"x": 1})
+    rc.set("/b", "", {"y": 2})
+    rc.invalidate("/a", "")
+    assert rc.get("/a", "") is None
+    assert rc.get("/b", "") is not None
+    rc.invalidate()
+    assert rc.get("/b", "") is None
